@@ -14,6 +14,7 @@
 #define DURATIONTRIAL    1
 #define SINGLEFREQUENCY  2
 #define DOUBLEFREQUENCY  3
+#define TIMEDIFF         4
 
 /*--------------------------
  variables
@@ -26,6 +27,8 @@ int frequency = 2;
 int frequencyDuration = 50;
 int frequencyInterval = (1000/frequency)-frequencyDuration;
 int signalChange;
+int timeDiffCount = 0;
+char buffer[] = {' ',' ',' ',' ',' ',' ',' '}; // Receive up to 7 bytes
 
 /*-------------------------
  functions
@@ -71,6 +74,7 @@ void loop()
         Serial.println("1. Duration: 5ms to 80ms in 15ms increments, x8");
         Serial.println("2. Single LED Natural Frequency");
         Serial.println("3. Double LED Natural Frequency");
+        Serial.println("4. Double LED Time Difference Pattern");
         break;
       case '1':
         Serial.println("Starting Duration: 5ms to 80ms in 15ms increments, x8");
@@ -86,6 +90,11 @@ void loop()
         Serial.println("Starting Double LED Natural Frequency");
         onSignal = true;
         signalChange = 3;
+        break;
+      case '4':
+        Serial.println("Starting Double LED Time Difference");
+        onSignal = true;
+        signalChange = 4;
         break;
       case 'p':
         Serial.println("Paused.");
@@ -106,7 +115,7 @@ void loop()
 
   while (onSignal)
   {
-    if (Serial.available() > 0) // Check is user has decided to quit or pause
+    if (Serial.available() > 0) // Check if user has decided to quit or pause
     {
       controlChar = Serial.read();
       if (controlChar == 'q') {
@@ -114,6 +123,7 @@ void loop()
         digitalWrite(PIN_TRIGGER_PULSE, LOW);
         onSignal = false;
         Serial.println("Quitting.");
+        count = 0;
         controlChar = 0;
         break;
       } 
@@ -187,6 +197,13 @@ void loop()
 
         case SINGLEFREQUENCY: // Single LED Frequency
           delay(500); 
+          if (count==0)
+          {
+            Serial.println("Input duration, in ms");
+            while(Serial.available()==0) {}
+            Serial.readBytesUntil('n', buffer, 7);
+            frequencyDuration = atoi(buffer);
+          }
           if (count <= 8)
           {
             digitalWrite(CAMERA, HIGH);
@@ -200,12 +217,17 @@ void loop()
 //              triggerLightOne(frequencyDuration);
 //              delay(frequencyInterval);
 //            }
-            for (int i = 1; i <= 50; i++)
+            for (int i = 1; i <= floor(3000/(frequencyDuration*2)); i++)
             {
               triggerLightOne(frequencyDuration);
               delay(frequencyDuration);
             }
             delay(1000);
+            Serial.print(floor(3000/(frequencyDuration*2)));
+            Serial.print(" bouts of ");
+            Serial.print(frequencyDuration);
+            Serial.println(" ms");
+            digitalWrite(CAMERA,LOW);
             digitalWrite(CAMERA, LOW);
             delay(10000);
             count++;
@@ -213,12 +235,20 @@ void loop()
             {
               count = 0;
               onSignal = 0;
+              Serial.println("Single LED Frequency Pattern complete");
             }
           }
         break;
 
         case DOUBLEFREQUENCY: // Double LED Frequency
           delay(500);
+          if (count==0)
+          {
+            Serial.println("Input duration, in ms");
+            while(Serial.available()==0) {}
+            Serial.readBytesUntil('n', buffer, 7);
+            frequencyDuration = atoi(buffer);
+          }
           if (count <= 8)
           {
             digitalWrite(CAMERA, HIGH);
@@ -238,6 +268,10 @@ void loop()
               triggerLightTwo(frequencyDuration);
             }
             delay(1000);
+            Serial.print(floor(3000/(frequencyDuration*2)));
+            Serial.print(" bouts of ");
+            Serial.print(frequencyDuration);
+            Serial.println(" ms");
             digitalWrite(CAMERA,LOW);
             delay(10000);
             
@@ -246,6 +280,51 @@ void loop()
             {
               count = 0;
               onSignal = 0;
+              Serial.println("Double LED Frequency Pattern complete");
+            }
+          }
+        break;
+        
+        case TIMEDIFF:
+          delay(500);
+          if (count==0 && timeDiffCount == 0)
+          {
+            Serial.println("Input duration, in ms");
+            while(Serial.available()==0) {}
+            Serial.readBytesUntil('n', buffer, 7);
+            frequencyDuration = atoi(buffer);
+          }
+          if (count <= 8)
+          {
+            if (timeDiffCount == 0)
+            {
+              Serial.print("Trial #:\t");
+              Serial.println(count);
+            }
+            digitalWrite(CAMERA,HIGH);
+            delay(1000);
+            triggerLightOne(frequencyDuration);
+            delay(timeDiffCount*10);
+            triggerLightTwo(frequencyDuration);
+            delay(1500-(2*frequencyDuration+timeDiffCount*10));
+            Serial.print("Light Duration of ");
+            Serial.print(frequencyDuration);
+            Serial.print(" ms separated by ");
+            Serial.print(timeDiffCount*10);
+            Serial.println(" ms");
+            digitalWrite(CAMERA,LOW);
+            timeDiffCount++;
+            delay(8000);
+            if (timeDiffCount == 3)
+            {
+              timeDiffCount = 0;
+              count++;
+            }
+            if (count == 8)
+            {
+              count = 0;
+              onSignal = 0;
+              Serial.println("Double LED Time Difference Pattern complete");
             }
           }
         break;
@@ -261,7 +340,7 @@ void loop()
 
 void triggerLightOne (int duration)
 { 
-  Serial.println("Activating Light One");
+  // Serial.println("Activating Light One");
   digitalWrite(PIN_EXTERNAL_TRIGGER, HIGH);
   digitalWrite(PIN_TRIGGER_PULSE, HIGH);
   delay(duration);
@@ -271,7 +350,7 @@ void triggerLightOne (int duration)
   
 void triggerLightTwo (int duration)
 { 
-  Serial.println("Activating Light Two");
+  // Serial.println("Activating Light Two");
   digitalWrite(PIN_EXTERNAL_TRIGGER2, HIGH);
   digitalWrite(PIN_TRIGGER_PULSE2, HIGH);
   delay(duration);
