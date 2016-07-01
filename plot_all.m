@@ -1,5 +1,5 @@
 %% Plot all the whisking angles over time on the same figure
-% Last edited 6/17/16 by Hill Chang
+% Last edited 6/30/16 by Hill Chang
 
 % This script examines all the .mat files in a single folder, created by
 % merge_nmat_files_3
