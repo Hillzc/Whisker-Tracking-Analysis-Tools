@@ -1,4 +1,4 @@
-% Plot all the whisking angles over time on the same figure
+%% Plot all the whisking angles over time on the same figure
 % Last edited 6/17/16 by Hill Chang
 
 % This script examines all the .mat files in a single folder, created by
@@ -6,241 +6,146 @@
 % Note: Thie script assumes that each .mat file contains only one whisking
 % bout
 
-% Detect when whisking starts or stops based on angle (standard deviation
-% maybe?)
-% Calculate:
-    % Average duration
-    % Average frequency
-    % Average deflection
 
-clear;
+
+clear; 
 folder = uigetdir;
 cd(folder);
 filePattern = fullfile(folder, '*.mat');
 matfiles = dir(filePattern);
 count = length(matfiles);
 
+angles = importdata(matfiles(1,1).name);
+angles = angles.MovieInfo.AvgWhiskerAngle;
+allAngles = zeros(count,2100);
 
 
-for i=1:count; % Loop for every .mat file
-    i % Declare which file this is
-    angles = importdata(matfiles(i).name);
+%% Loop for every .mat file
+for i=1:count; 
+    i %% Declare which file this is
+    angles = importdata(matfiles(i,1).name);
+    angles = angles.MovieInfo.AvgWhiskerAngle;
 
+    %% Display raw data
+    figure;
+    plot(angles)
+    axis([400 600 -inf inf])
     
-    % Find whisk start
-    whiskStart = 0;
-    for j=1:length(angles);
-        if (abs(angles(j)-mean(angles))>1.5*std(angles) && ...
-                abs(std(angles(j:j+150))/std(angles))>.5); % Whisk starts when angle deflection is more than 2 std from mean
-            whiskStart = j;
-            break;
-        end
-    end
+    %% Find whisk start
+    disp('Click on whisk starting time');
+    [whiskStart,y] = ginput(1);
+    % whiskStart = 500
     
-    % Find whisk end
-    whiskEnd = 0;
-    for k=whiskStart:length(angles)-150;
-        if (abs(std(angles(k:k+150))/std(angles))<.30); % Whisk ends when standard deviation of next 150 frames is less than 1.25*total std
-            whiskEnd = k;
-            break;
-        end
-        if (k == length(angles)-150);
-            whiskEnd = k;
-            break;
-        end
-    end
+    %% Find whisk end
+    % disp('Click on whisk ending time');
+    % [whiskEnd,y] = ginput(1);
+    whiskEnd = length(angles)-500
     
-    % Find whisk duration
+    %% Close raw data
+    close;
+    
+    %% Find whisk duration
     duration = (whiskEnd - whiskStart)*2 % Duration of whisking bout in ms
     
-    % Find average whisk frequency
+    %% Local Protractions/retractions
+    % [peaks,locs]=findpeaks(angles,'MINPEAKDISTANCE',10);
+    [protractions,protractionLocs,retractions,retractionLocs] = extrema(angles);
+    allData = [horzcat(protractions,retractions); horzcat(protractionLocs,retractionLocs)];
+    sortedData = sortrows(allData',2);
+    sortedData = sortedData';
+    peaks = sortedData(1,:);
+    locs = sortedData(2,:);
+    oldPeaks = peaks;
+    oldLocs = locs;
     
-    % Find maximum whisk frequency
+    % Get rid of extra peaks (false positives)
+    extraPeaks = [];
+    for p=2:(length(peaks)-1);
+        if (peaks(p-1) < peaks(p) && peaks(p+1) > peaks(p));
+            extraPeaks = [extraPeaks p];
+        end
+        if (peaks(p-1) > peaks(p) && peaks(p+1) < peaks(p));
+            extraPeaks = [extraPeaks p];
+        end
+    end
+    for t=1:length(extraPeaks);
+        peaks(p) = 0;
+        locs(p) = 0;
+    end
+    peaks = peaks(peaks~=0);
+    locs = locs(locs~=0);
+    
+    if (numel(peaks) == 1); % If for some reason there is only one peak, ensure that peaks and locs are both arrays
+        peaks = [0 1];
+        locs = [0 1];
+    end
+    
+    %% Find average whisk period
+    avgPeriod = mean(diff(locs))*2
+    
+    %% Find average whisk protraction
+    avgMovement = mean(diff(peaks))
+    
+    %% Find average whisk retraction
    
+    %% Find maximum whisk protraction
+    maxProtraction = max(angles)  
     
-    % Find average whisk protraction
-    avg_amp=mean(angles)
-    
-    % Find averagae whisk retraction
-   
-    % Find maximum whisk protraction
-    maxProtraction = max(angles)
-    
-    % Find maximum whisk retraction
+    %% Find maximum whisk retraction
     maxRetraction = min(angles(whiskStart:whiskEnd))
-    
-    % Plot angle data and mark whisk beginning/end
-    subplot(count,1,i);
-    if (whiskStart >= 500)
-        plot(angles(whiskStart-500:length(angles)));
-    else
-        plot(500-whiskStart:3500-whiskStart,angles);
-    end
-    hold on;
-    line([500 500],[1 200],'LineWidth',1,'LineStyle','-','Color','g'); hold on;
-    line([(duration/2)+500 (duration/2)+500],[1 200],'LineWidth',1,'LineStyle','-','Color','r');    
-    axis([0 4000 0 200]);
-    
-    %Local Protraction/Retraction
-    % Plot all the whisking angles over time on the same figure
-% Last edited 6/17/16 by Hill Chang
-
-% This script examines all the .mat files in a single folder, created by
-% merge_nmat_files_3
-% Note: Thie script assumes that each .mat file contains only one whisking
-% bout
-
-% Detect when whisking starts or stops based on angle (standard deviation
-% maybe?)
-% Calculate:
-    % Average duration
-    % Average frequency
-    % Average deflection
-end
-clear;
-folder = uigetdir;
-cd(folder);
-filePattern = fullfile(folder, '*.mat');
-matfiles = dir(filePattern);
-count = length(matfiles);
-
-
-
-for i=1:count; % Loop for every .mat file
-    i % Declare which file this is
-    angles = importdata(matfiles(i).name);
-
-    
-    % Find whisk start
-    whiskStart = 0;
-    for j=1:length(angles);
-        if (abs(angles(j)-mean(angles))>1.5*std(angles) && ...
-                abs(std(angles(j:j+150))/std(angles))>.5); % Whisk starts when angle deflection is more than 2 std from mean
-            whiskStart = j;
-            break;
-        end
-    end
-    
-    % Find whisk end
-    whiskEnd = 0;
-    for k=whiskStart:length(angles)-150;
-        if (abs(std(angles(k:k+150))/std(angles))<.30); % Whisk ends when standard deviation of next 150 frames is less than 1.25*total std
-            whiskEnd = k;
-            break;
-        end
-        if (k == length(angles)-150);
-            whiskEnd = k;
-            break;
-        end
-    end
-    
-    % Find whisk duration
-    duration = (whiskEnd - whiskStart)*2 % Duration of whisking bout in ms
-    
-    % Find average whisk frequency
-    
-    % Find maximum whisk frequency
    
-    
-    % Find average whisk protraction
-    avg_amp=mean(angles)
-    
-    % Find averagae whisk retraction
-    
-    % Find maximum whisk protraction
-    maxProtraction = max(angles)
-    
-    % Find maximum whisk retraction
-    maxRetraction = min(angles(whiskStart:whiskEnd))
-    
-    % Plot angle data and mark whisk beginning/end
-    subplot(count,1,i);
-   plot(angles); hold on;
-    line([whiskStart whiskStart],[1 200],'LineWidth',1,'LineStyle','-','Color','g'); hold on;
-    line([whiskEnd whiskEnd],[1 200],'LineWidth',1,'LineStyle','-','Color','r');    
-    axis([0 10000 0 200]);
-    
-    %Local Protractions/Retractions
-   % Plot all the whisking angles over time on the same figure
-% Last edited 6/17/16 by Hill Chang
-
-% This script examines all the .mat files in a single folder, created by
-% merge_nmat_files_3
-% Note: Thie script assumes that each .mat file contains only one whisking
-% bout
-
-% Detect when whisking starts or stops based on angle (standard deviation
-% maybe?)
-% Calculate:
-    % Average duration
-    % Average frequency
-    % Average deflection
-end
-clear;
-folder = uigetdir;
-cd(folder);
-filePattern = fullfile(folder, '*.mat');
-matfiles = dir(filePattern);
-count = length(matfiles);
-
-
-
-for i=1:count; % Loop for every .mat file
-    i % Declare which file this is
-    angles = importdata(matfiles(i).name);
-
-    
-    % Find whisk start
-    whiskStart = 0;
-    for j=1:length(angles);
-        if (abs(angles(j)-mean(angles))>1.5*std(angles) && ...
-                abs(std(angles(j:j+150))/std(angles))>.5); % Whisk starts when angle deflection is more than 2 std from mean
-            whiskStart = j;
-            break;
+    %% Find fastest whisker movement
+    slope = 0;
+    for m = 2:length(peaks);
+        if (abs((peaks(m)-peaks(m-1)))/abs((locs(m)-locs(m-1))) > slope && abs((peaks(m)-peaks(m-1)))/abs((locs(m)-locs(m-1))) < 7);
+            slope = abs((peaks(m)-peaks(m-1)))/abs((locs(m)-locs(m-1)));
+            maxMovement = m;
+            locs(maxMovement);
         end
     end
+    disp(sprintf('The fastest whisker movement is %d degrees in %d ms',...
+        peaks(maxMovement)-peaks(maxMovement-1),(locs(maxMovement)-locs(maxMovement-1))*2))
     
-    % Find whisk end
-    whiskEnd = 0;
-    for k=whiskStart:length(angles)-150;
-        if (abs(std(angles(k:k+150))/std(angles))<.30); % Whisk ends when standard deviation of next 150 frames is less than 1.25*total std
-            whiskEnd = k;
-            break;
-        end
-        if (k == length(angles)-150);
-            whiskEnd = k;
-            break;
-        end
+    %% Add to summative data
+    for k=1:2100
+        allAngles(i,k) = angles(k);
     end
     
-    % Find whisk duration
-    duration = (whiskEnd - whiskStart)*2 % Duration of whisking bout in ms
-    
-    % Find average whisk frequency
-    
-    % Find maximum whisk frequency
-   
-    
-    % Find average whisk protraction
-    avg_amp=mean(angles)
-    
-    % Find averagae whisk retraction
-    
-    % Find maximum whisk protraction
-    maxProtraction = max(angles)
-    
-    % Find maximum whisk retraction
-    maxRetraction = min(angles(whiskStart:whiskEnd))
-    
-    % Plot angle data and mark whisk beginning/end
-    subplot(count,1,i);
-   plot(angles); hold on;
-    line([whiskStart whiskStart],[1 200],'LineWidth',1,'LineStyle','-','Color','g'); hold on;
-    line([whiskEnd whiskEnd],[1 200],'LineWidth',1,'LineStyle','-','Color','r');    
-    axis([0 10000 0 200]);
-    
-    %Local Protractions/Retractions
-     locs=whiskStart:whiskEnd;
-    [pks,locs]=findpeaks(angles);
-    hold on; plot(locs,pks,'rx')
+    %% Plot angle data and mark whisk beginning
+    % subplot(count,1,i);
+%   figure;
+% %     if (whiskStart >= 500)
+% %         plot(angles(whiskStart-500:length(angles))); hold on;
+% %         plot(locs+500,peaks,'.k'); hold on;
+% %         plot(oldLocs+500,oldPeaks,'oy');
+% %     else
+% %         % plot(((500-whiskStart):(10499-whiskStart)),angles(1:10000));
+% %         plot(angles); hold on;
+% %         plot(locs,peaks,'.k'); hold on;
+% %         plot(oldLocs,oldPeaks,'oy');
+% %     end
+% %     hold on;
+% %     line([500 500],[-300 -150],'LineWidth',1,'LineStyle','-','Color','g'); hold on;
+% %     line([(duration/2)+500 (duration/2)+500],[-300 -150],'LineWidth',1,'LineStyle','-','Color','r'); hold on;    
+% %     line([locs(maxMovement-1)+500 locs(maxMovement)+500],[peaks(maxMovement-1) peaks(maxMovement)],'LineWidth',2,'Color','m','LineStyle','-.');
+% %     axis([0 10000 -300 -150]);
+% %     title(i);
+%     plot(angles); hold on;
+%     plot(locs,peaks,'.k'); hold on;
+%     % plot(oldLocs,oldPeaks,'oy'); hold on;
+%     line([whiskStart whiskStart],[-300 -150],'LineWidth',1,'LineStyle','-','Color','g'); hold on;
+%     line([whiskEnd whiskEnd],[-300 -150],'LineWidth',1,'LineStyle','-','Color','r'); hold on;
+%     line([locs(maxMovement-1) locs(maxMovement-1)],[peaks(maxMovement-1) peaks(maxMovement)],'LineWidth',2,'Color','m','LineStyle','-.');
+%     axis([whiskStart whiskEnd -240 -210]);
+%     title(i);
+
 end
+
+%% Calculate summative data
+meanAngles = mean(allAngles);
+stdAngles = std(allAngles);
+
+figure;
+plot(meanAngles,'r--'); hold on;
+plotshaded(1:2100,[meanAngles+stdAngles; meanAngles-stdAngles],'b');
+
