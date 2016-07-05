@@ -37,13 +37,19 @@ replicateNatural = fopen('replicateNatural.ino','w+');
 
 for i = 1:length(peaks)-1
    movement = peaks(i+1)-peaks(i);
-   time = locs(i+1)-locs(i);
+   time = (locs(i+1)-locs(i))*2;
    slope = movement/time;
    if (slope >= 0)
-       % pLightDuration = protraction(movement, time);
+       pLightDuration = protraction(movement, time); % THIS STILL NEEDS
+       % TO BE WRITTEN BECAUSE IT DOESN'T EXIST
+       % Outputs the duration to turn on light one to make the whisker move
+       % through 'movement' degeres in 'duration' milliseconds
+       fprintf(replicateNatural,'triggerLightOne(%d)\n',pLightDuration);
+       fprintf(replicateNatural,'delay(%d)\n',time-pLightDuration);
    else
-       % rLightDuration = retraction(movement, time);
+       rLightDuration = retraction(movement, time);
+       fprintf(replicateNatural,'triggerLightTwo(%d)\n',rLightDuration);
+       fprintf(replicateNatural,'delay(%d)\n',time-rLightDuration);
    end
-   fprintf(replicateNatural,'triggerLightOne(%d)\n',i);
 
 end
