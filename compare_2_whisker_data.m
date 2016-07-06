@@ -44,6 +44,7 @@ for i=1:count;
     stimulatedAngles = stimulatedAngles - mean(stimulatedAngles(1:sWhiskStart));
     stimulatedAngles = stimulatedAngles(sWhiskStart:sWhiskEnd);
 
+%     Uncomment these next three lines if you want to also graph each set of whisker data alongside the initial
 %     figure;
 %     plot(naturalAngles); hold on;
 %     plot(stimulatedAngles,'-r');
