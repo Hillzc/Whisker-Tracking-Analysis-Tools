@@ -5,7 +5,7 @@
 clear;
 disp('Load natural whisking data');
 uiopen('load');
-naturalAngles = MovieInfo.AvgWhiskerAngle;
+naturalAngles = MovieInfo.AvgWhiskerPos(:,2);
 figure;
 plot(naturalAngles)
 disp('Click on whisk starting time');
@@ -27,16 +27,16 @@ filePattern = fullfile(folder, '*.mat');
 matfiles = dir(filePattern);
 count = length(matfiles);
 
-figure;
+a = figure('Name',folder,'NumberTitle','off');
 for i=1:count; 
     i %% Declare which file this is
     stimulatedAngles = importdata(matfiles(i,1).name);
-    stimulatedAngles = stimulatedAngles.MovieInfo.AvgWhiskerAngle;
+    stimulatedAngles = stimulatedAngles.MovieInfo.AvgWhiskerPos(:,2);
 
     figure;
     plot(stimulatedAngles);
     disp('Click on whisk starting time');
-    axis([400 600 -inf inf]);
+    axis([200 600 -inf inf]);
     [sWhiskStart, y] = ginput(1);
     sWhiskEnd = sWhiskStart + (nWhiskEnd - nWhiskStart);
     close;
@@ -44,18 +44,22 @@ for i=1:count;
     stimulatedAngles = stimulatedAngles - mean(stimulatedAngles(1:sWhiskStart));
     stimulatedAngles = stimulatedAngles(sWhiskStart:sWhiskEnd);
 
-%     Uncomment these next three lines if you want to also graph each set of whisker data alongside the initial
-%     figure;
-%     plot(naturalAngles); hold on;
-%     plot(stimulatedAngles,'-r');
+    figure(i);
+    plot(naturalAngles); hold on;
+    plot(stimulatedAngles,'-r');
+    title(i);
+    xlabel('Frames');
+    ylabel('Avg Whisker Pos');
     
- 
-    [r,lags] = xcorr(naturalAngles,stimulatedAngles,'coeff');
+    figure(a);
+    [r,lags] = xcorr(naturalAngles,stimulatedAngles);
     subplot(4,4,i);    
     plot(lags,r); hold on;
     [maxCorr,maxCorrI] = max(abs(r))
     lag = lags(maxCorrI)
     plot(lag,r(maxCorrI),'o');
     title(i);
+    xlabel('Lag');
+    ylabel('X-Corr');
 end
 
