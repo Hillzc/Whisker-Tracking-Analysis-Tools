@@ -15,8 +15,8 @@ disp('Click on whisk ending time');
 [nWhiskEnd, y] = ginput(1);
 close;
 
-% Normalize natural whisking data
-naturalAngles = naturalAngles - mean(naturalAngles(1:nWhiskStart));
+% Standardize natural whisking data
+naturalAngles = (naturalAngles - mean(naturalAngles(1:nWhiskStart)))/(std(naturalAngles));
 naturalAngles = naturalAngles(nWhiskStart:nWhiskEnd);
 
 %% Load stimulated whisking data
@@ -41,7 +41,7 @@ for i=1:count;
     sWhiskEnd = sWhiskStart + (nWhiskEnd - nWhiskStart);
     close;
 
-    stimulatedAngles = stimulatedAngles - mean(stimulatedAngles(1:sWhiskStart));
+    stimulatedAngles = (stimulatedAngles - mean(stimulatedAngles(1:sWhiskStart)))/(std(stimulatedAngles));
     stimulatedAngles = stimulatedAngles(sWhiskStart:sWhiskEnd);
 
     figure(i);
@@ -49,7 +49,7 @@ for i=1:count;
     plot(stimulatedAngles,'-r');
     title(i);
     xlabel('Frames');
-    ylabel('Avg Whisker Pos');
+    ylabel('Avg Whisker Pos (Standardized)');
     
     figure(a);
     [r,lags] = xcorr(naturalAngles,stimulatedAngles);
