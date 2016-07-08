@@ -33,7 +33,7 @@ for i=1:count;
     stimulatedAngles = importdata(matfiles(i,1).name);
     stimulatedAngles = stimulatedAngles.MovieInfo.AvgWhiskerPos(:,2);
 
-    figure;
+    figure(t);
     plot(stimulatedAngles);
     disp('Click on whisk starting time');
     axis([200 600 -inf inf]);
